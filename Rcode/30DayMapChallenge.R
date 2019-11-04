@@ -3,7 +3,6 @@
   library(tidyverse)
   
 # Day 3: World map ----
-
 ## Download from https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data
 ## Countries 2016_1:60 Million
   
@@ -26,6 +25,26 @@
   dir.create("Rresults")
   ggsave("Rresults/Day3_World.png", width = 25, height = 15, units = "cm")
   
+# Day 4: Hexagons ----
+## Make hexagons over a region (e.g.Iberian Peninsula)
   
+  SP <- World %>%
+    filter(NAME_ENGL == "Spain" | NAME_ENGL == "Portugal") %>%
+    st_cast("POLYGON") 
+  
+  IB <- SP %>%
+    mutate(Area = units::set_units(st_area(SP), km^2)) %>%
+    filter(Area > units::set_units(4000, km^2)) %>%
+    st_union()
+  
+  Grids <- st_make_grid(IB, cellsize = .2, what = "polygons", square = FALSE) %>%
+    st_sf() 
+  
+  ggplot() +
+    geom_sf(data = Grids, col = "red") +
+    geom_sf(data = IB, alpha = 1, colour = "black", fill = NA, size = 0.5) +
+    labs(title = "Hexagon tessellation of the Iberian Peninsula") 
+  
+  ggsave("Rresults/Day4_Hexagons_IB.png", width = 15, height = 15, units = "cm")  
   
   
