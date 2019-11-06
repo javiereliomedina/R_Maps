@@ -82,3 +82,42 @@
   ggsave("Rresults/Day5_Raster_Tellus.png", height = 15, units = "cm")
   unlink("Rdata", recursive = TRUE)
   
+  
+# Day 6: Blue ----
+## European river catchments
+  River_URL <- "https://www.eea.europa.eu/data-and-maps/data/european-river-catchments-1/zipped-shapefile-vector-polygon/zipped-shapefile-vector-polygon/at_download/file.zip"
+  dir.create("Rdata")
+  download.file(River_URL, destfile = "Rdata/River.zip")
+  unzip(zipfile = "Rdata/River.zip", exdir   = "Rdata/River")
+  River <- read_sf("Rdata/River/ERC110108v2.shp")
+  
+  World_URL <- "https://ec.europa.eu/eurostat/cache/GISCO/distribution/v2/countries/download/ref-countries-2016-60m.shp.zip"
+  dir.create("Rdata")
+  download.file(World_URL, destfile = "Rdata/World.zip")
+  unzip(zipfile = "Rdata/World.zip", exdir   = "Rdata/World")
+  unzip(zipfile = "Rdata/World/CNTR_RG_60M_2016_4326.shp.zip",
+        exdir   = "Rdata/World_SHP")
+  World <- read_sf("Rdata/World_SHP/CNTR_RG_60M_2016_4326.shp") %>%
+    st_transform(crs = st_crs(River))
+  
+  ggplot() +
+    geom_sf(data = World, col = "#DEEBF7", fill = "#DEEBF7") +
+    geom_sf(data = River, aes(fill = OCEAN_1)) +
+    scale_fill_brewer(name = "Ocean", palette = "Blues") +
+    coord_sf(xlim = c(2500000, 6500000), ylim = c(1500000, 5300000)) +
+    labs(title = "European river catchments (ERC) classified by ocean",
+         subtitle = "Scale 1:1 million",
+         caption = "Source: European Environment Agency", color = "blue") +
+    theme(axis.text = element_text(colour = "#6BAED6"),
+          plot.title = element_text(colour = "#084594"),
+          plot.subtitle = element_text(colour = "#2171B5"),
+          plot.caption = element_text(colour = "#2171B5"),
+          legend.title = element_text(color = "darkblue"),
+          legend.text = element_text(color = "#084594"),
+          panel.background = element_rect(fill = "#F7FBFF"),
+          panel.grid.major = element_line(colour = "blue"))
+  
+  ggsave("Rresults/Day6_Blue.png", width = 8, height = 7)
+  
+  unlink("Rdata", recursive = TRUE)
+  
