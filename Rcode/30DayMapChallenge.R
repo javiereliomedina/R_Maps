@@ -121,3 +121,54 @@
   
   unlink("Rdata", recursive = TRUE)
   
+# Day 13: Track ----
+  
+  dir.create("Rdata")
+  Roads_250k_URL <- "http://data-osi.opendata.arcgis.com/datasets/1434c3b05da742cdb47e00040edc9dd5_24.zip"
+  download.file(Roads_250k_URL, destfile = "Rdata/Roads_OSi_National_250k_Map_of_Ireland.zip")
+  unzip(zipfile = "Rdata/Roads_OSi_National_250k_Map_of_Ireland.zip",
+        exdir = "Rdata/Roads_OSi_National_250k_Map_of_Ireland")
+  Roads_250k <- read_sf("Rdata/Roads_OSi_National_250k_Map_of_Ireland/Roads__OSi_National_250k_Map_of_Ireland.shp") %>%
+    mutate(RTT = as.factor(RTT)) %>%
+    mutate(RTT_Name = factor(recode(RTT,
+                                    "-32768" = "Null",
+                                    "984"    = "Local Route",
+                                    "14"     = "Primary Route",
+                                    "15"     = "Secondary Route",
+                                    "16"     = "National Motorway"),
+                             levels = c("Null",
+                                        "Local Route",
+                                        "Primary Route",
+                                        "Secondary Route",
+                                        "National Motorway")
+    ) 
+    )
+    
+  library(leaflet)
+  p_popup <- paste("<strong> OBJECTID: </strong>", Roads_250k$OBJECTID, "<br>",
+                   "<strong> RTT: </strong>", Roads_250k$RTT_Name, "<br>",
+                   "<strong> LEN: </strong>", round(Roads_250k$LEN, 2), "km")
+  pal_fun <- colorFactor("YlOrRd", NULL, n = 4)
+  Road_250k_map <- leaflet() %>%
+    addPolylines(data = Roads_250k, 
+                 stroke = TRUE,
+                 weight = 2,
+                 col = ~pal_fun(Roads_250k$RTT_Name),
+                 fillOpacity = 0.5,
+                 highlightOptions = highlightOptions(color = "blue",
+                                                     weight = 3,
+                                                     bringToFront = TRUE),
+                 label = paste("OBJECTID:", Roads_250k$OBJECTID),
+                 popup = p_popup) %>%
+    addTiles() %>%
+    addLegend(data = Roads_250k,
+              pal = pal_fun,
+              values = ~RTT_Name,
+              opacity = 1,
+              title = "Roads - OSi National 250k Map of Ireland")
+  Road_250k_map
+    
+  mapview::mapshot(Road_250k_map, url = "Rresults/Road_250k_map.html")
+    
+  unlink("Rdata", recursive = TRUE)
+  
