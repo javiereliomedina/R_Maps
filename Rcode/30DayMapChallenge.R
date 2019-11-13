@@ -123,6 +123,10 @@
   
 # Day 13: Track ----
   
+  library(sf)
+  library(tidyverse)
+  library(leaflet)
+  
   dir.create("Rdata")
   Roads_250k_URL <- "http://data-osi.opendata.arcgis.com/datasets/1434c3b05da742cdb47e00040edc9dd5_24.zip"
   download.file(Roads_250k_URL, destfile = "Rdata/Roads_OSi_National_250k_Map_of_Ireland.zip")
@@ -143,8 +147,7 @@
                                         "National Motorway")
     ) 
     )
-    
-  library(leaflet)
+  
   p_popup <- paste("<strong> OBJECTID: </strong>", Roads_250k$OBJECTID, "<br>",
                    "<strong> RTT: </strong>", Roads_250k$RTT_Name, "<br>",
                    "<strong> LEN: </strong>", round(Roads_250k$LEN, 2), "km")
@@ -167,8 +170,12 @@
               opacity = 1,
               title = "Roads - OSi National 250k Map of Ireland")
   Road_250k_map
-    
+  
+  # Save as HTML
   mapview::mapshot(Road_250k_map, url = "Rresults/Road_250k_map.html")
     
+  # Save as png  
+  mapview::mapshot(Road_250k_map, file = "Rresults/Day13_Road_250k_map.png")
+
   unlink("Rdata", recursive = TRUE)
   
