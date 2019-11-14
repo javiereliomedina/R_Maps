@@ -1,11 +1,12 @@
 
-  library(sf)
-  library(tidyverse)
   
 # Day 3: World map ----
 ## Download from https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data
 ## Countries 2016_1:60 Million
   
+  library(sf)
+  library(tidyverse)
+
   World_URL <- "https://ec.europa.eu/eurostat/cache/GISCO/distribution/v2/countries/download/ref-countries-2016-60m.shp.zip"
   dir.create("Rdata")
   download.file(World_URL, destfile = "Rdata/World.zip")
@@ -52,6 +53,9 @@
 ## Radiometric data (Geological Survey, Ireland)
 ## Download from https://www.gsi.ie/en-ie/programmes-and-projects/tellus/Pages/Data-and-Maps.aspx
   
+  library(sf)
+  library(tidyverse)
+  
   dir.create("Rdata")
   Radiometric_URL <- "https://secure.dccae.gov.ie/GSI_DOWNLOAD/Geophysics/Data/GSI_Tellus_A5_RAD_GRIDS_2019.zip"
   download.file(Radiometric_URL, destfile = "Rdata/Radiometrics.zip")
@@ -85,6 +89,10 @@
   
 # Day 6: Blue ----
 ## European river catchments
+  
+  library(sf)
+  library(tidyverse)
+  
   River_URL <- "https://www.eea.europa.eu/data-and-maps/data/european-river-catchments-1/zipped-shapefile-vector-polygon/zipped-shapefile-vector-polygon/at_download/file.zip"
   dir.create("Rdata")
   download.file(River_URL, destfile = "Rdata/River.zip")
@@ -178,4 +186,68 @@
   mapview::mapshot(Road_250k_map, file = "Rresults/Day13_Road_250k_map.png")
 
   unlink("Rdata", recursive = TRUE)
+  
+# Day 14: Boundaries ----
+## Browse source code at: https://github.com/riatelab/cartography 
+## install.packages("cartography")  
+  
+  library(sf)
+  library(cartography)
+  
+  # path to the geopackage file embedded in cartography
+  path_to_gpkg <- system.file("gpkg/mtq.gpkg", package="cartography")
+  # import to an sf object
+  mtq <- st_read(dsn = path_to_gpkg, quiet = TRUE)
+  # Compute the population density (inhab./km2) using sf::st_area()
+  mtq$POPDENS <- as.numeric(1e6 * mtq$POP / st_area(mtq))
+  # Get a SpatialLinesDataFrame of countries borders
+  mtq.contig <- getBorders(mtq)
+  
+  # get the figure ratio
+  sizes <- getFigDim(x = mtq, width = 1200, mar = c(0, 0, 1.2, 0))
+  # save the maps in png format
+  png(filename = "Rresults/Day14_Disc_Map.png",
+      width = sizes[1],
+      height = sizes[2],
+      res = 200)
+  
+  # plot municipalities (only the backgroung color is plotted)
+  plot(st_geometry(mtq), col = NA, border = NA, bg = "lightblue1", 
+       xlim = c(690574, 745940))
+  # Plot the population density with custom breaks
+  choroLayer(x = mtq,
+             var = "MED",
+             breaks = c(min(mtq$MED), seq(13000, 21000, 2000), max(mtq$MED)),
+             col = carto.pal("green.pal", 6),
+             border = "white",
+             lwd = 0.5, 
+             legend.pos = "topright",
+             legend.title.txt = "Median Income\n(euros)",
+             add = TRUE)
+  # Plot discontinuities
+  discLayer(
+    x = mtq.contig, 
+    df = mtq, 
+    var = "MED",
+    type = "rel", 
+    method = "geom", 
+    nclass = 3,
+    threshold = 0.4,
+    sizemin = 0.7, 
+    sizemax = 6, 
+    col = "red4",
+    legend.values.rnd = 1, 
+    legend.title.txt = "Relative\nDiscontinuities", 
+    legend.pos = "right",
+    add = TRUE
+  )
+  # Layout
+  layoutLayer(title = "Wealth Disparities in Martinique, 2015", 
+              author =  paste0("cartography ", packageVersion("cartography")),
+              sources = "Sources: Insee and IGN, 2018",
+              frame = FALSE, scale = 5, tabtitle = TRUE,theme = "grey.pal")
+  # north arrow
+  north(pos = "topleft")
+  
+  dev.off()
   
