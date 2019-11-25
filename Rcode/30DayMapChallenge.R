@@ -251,3 +251,63 @@
   
   dev.off()
   
+# Day 25: Climate ----
+## Months average temp (C)  
+## Download data from https://cds.climate.copernicus.eu/cdsapp#!/dataset/sis-european-energy-sector?tab=overview
+## You'd need to create new account (free)
+## Select:
+##  Variable: Air temperature
+##  Time aggregation: month average
+##  Vertical level: 2 m
+##  Bias correction: Normal distribution adjustment
+##  Format: Zip file
+  
+  library(raster)
+  library(animation)
+  library(ncdf4)
+  library(sf)
+  library(ggplot2)
+  
+  World_URL <- "https://ec.europa.eu/eurostat/cache/GISCO/distribution/v2/countries/download/ref-countries-2016-60m.shp.zip"
+  dir.create("Rdata")
+  download.file(World_URL, destfile = "Rdata/World.zip")
+  unzip(zipfile = "Rdata/World.zip", exdir   = "Rdata/World")
+  unzip(zipfile = "Rdata/World/CNTR_RG_60M_2016_4326.shp.zip",
+        exdir   = "Rdata/World_SHP")
+  World <- read_sf("Rdata/World_SHP/CNTR_RG_60M_2016_4326.shp") %>%
+    st_transform(crs = st_crs(b))
+  
+  Years <- seq(as.Date("1979/01/01"), as.Date("2016/12/01"), by = "month")
+  Years <- format(Years, "%Y-%m")
+  length(Years)
+  
+  Temp_m <- list()
+  for (i in 1:456) {
+    Temp_m[i] <- raster("H_ERAI_ECMW_T159_TA-_0002m_Euro_22W27N_45E72N_050d_IN_TIM_19790101_20161231_01m_NA-_nbc_org_NA_NA-.nc", i)
+  }
+  Temp_m <- brick(Temp_m)
+  
+  raster_df <- as.data.frame(Temp_m, xy = TRUE)
+  Steps <- function(i) {
+    p <- ggplot() +
+      geom_sf(data = World, fill = "grey") +
+      geom_raster(data = raster_df,
+                  aes(x = x, y = y, fill = raster_df[[i+2]])) +
+      scale_fill_gradient("Temp [C]",
+                          low = 'yellow', high = 'red',
+                          na.value = NA,
+                          limits = c(-35, 35)) +
+      coord_sf(xlim = c(-10, 45), ylim = c(30, 71)) +
+      labs(title = "Climate data for the European energy sector",
+           subtitle = paste("Year:", Years[i]),
+           caption = "Source: European Centre for Medium-Range Weather Forecasts (ECMWF)")
+    print(p) 
+  }
+  Steps(4)
+  
+  animation::saveGIF(for(i in 1:dim(Temp_m)[3]) Steps(i), 
+                     interval = 0.2,
+                     movie.name = "Temp_AV_month_2m.gif")
+  
+  unlink("Rdata", recursive = TRUE)
+  
