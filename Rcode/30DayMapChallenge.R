@@ -350,7 +350,15 @@ IHME1500 <- read_sf("Rdata/IHME1500/IHME1500_v12/shp/ihme1500_aquif_ec4060_v12_p
 ggplot() +
   geom_sf(data = World, fill = "darkgrey") + 
   geom_sf(data = IHME1500, aes(fill = AQUIF_CODE), color = NA) + 
-  scale_fill_manual(name = "Aq. Type Code",
+  scale_fill_manual(name = "Aquifer Type",
+                    labels = c("Highly productive porous aq.",
+                               "Low - mod. prod. porous aq.",
+                               "Highly prod. fissured aq.",
+                               "Low - mod. prod. fissured aq.",
+                               "Locally aq. rocks",
+                               "Practically non-aquiferous rocks",
+                               "Inland water",
+                               "Snow field / ice field"), 
                     values = c("cadetblue4",
                                "lightblue",
                                "darkolivegreen4",
