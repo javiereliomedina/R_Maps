@@ -307,7 +307,65 @@
   
   animation::saveGIF(for(i in 1:dim(Temp_m)[3]) Steps(i), 
                      interval = 0.2,
-                     movie.name = "Temp_AV_month_2m.gif")
+                     movie.name = "Day25_Temp_AV_month_2m.gif")
   
   unlink("Rdata", recursive = TRUE)
   
+# Day 26: Hydrogeology ----
+## Aquifers ( IHME1500_inwater)
+  
+library(sf)
+library(ggplot2)
+library(tidyverse)
+  
+World_URL <- "https://ec.europa.eu/eurostat/cache/GISCO/distribution/v2/countries/download/ref-countries-2016-60m.shp.zip"
+dir.create("Rdata")
+download.file(World_URL, destfile = "Rdata/World.zip")
+unzip(zipfile = "Rdata/World.zip", exdir   = "Rdata/World")
+unzip(zipfile = "Rdata/World/CNTR_RG_60M_2016_4326.shp.zip",
+      exdir   = "Rdata/World_SHP")
+World <- read_sf("Rdata/World_SHP/CNTR_RG_60M_2016_4326.shp") 
+  
+IHME1500_URL <- "https://download.bgr.de/bgr/grundwasser/IHME1500/v12/shp/IHME1500_v12.zip"
+dir.create("Rdata")
+download.file(IHME1500_URL, destfile = "Rdata/IHME1500.zip")
+unzip(zipfile = "Rdata/IHME1500.zip", exdir   = "Rdata/IHME1500")
+IHME1500 <- read_sf("Rdata/IHME1500/IHME1500_v12/shp/ihme1500_aquif_ec4060_v12_poly.shp") %>% 
+  mutate(AQUIF_CODE = factor(AQUIF_CODE, 
+                             levels = c("1", "2", "3", "4", "5", "6", "200", "300")
+  )) %>%
+  st_transform(crs = st_crs(World))
+  
+## Plot 
+## AQUIF_CODE: Aquifer Type Code
+##  1: Highly productive porous aquifers,
+##  2: Low and moderately productive porous aquifers
+##  3: Highly productive fissured aquifers (including karstified rocks)
+##  4: Low and moderately productive fissured aquifers (including karstified rocks)
+##  5: Locally aquiferous rocks, porous or fissured
+##  6: Practically non-aquiferous rocks, porous or fissured
+##  200: Inland water
+##  300: Snow field / ice field
+
+ggplot() +
+  geom_sf(data = World, fill = "darkgrey") + 
+  geom_sf(data = IHME1500, aes(fill = AQUIF_CODE), color = NA) + 
+  scale_fill_manual(name = "Aq. Type Code",
+                    values = c("cadetblue4",
+                               "lightblue",
+                               "darkolivegreen4",
+                               "darkseagreen3",
+                               "tan",
+                               "burlywood4",
+                               "blue",
+                               "White")
+  ) +
+  coord_sf(xlim = c(-10, 45), ylim = c(35, 71)) +
+  labs(title = "International hydrogeological map of Europe",
+       subtitle = "Scale 1:1,500,000",
+       caption = "Source: Federal Institute for Geosciences and Natural Resources (BGR)")  
+
+ggsave("Rresults/Day26_Hydrogeology.png", width = 25, units = "cm")
+
+unlink("Rdata", recursive = TRUE)
+
