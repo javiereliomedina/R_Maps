@@ -377,3 +377,47 @@ ggsave("Rresults/Day26_Hydrogeology.png", width = 25, units = "cm")
 
 unlink("Rdata", recursive = TRUE)
 
+
+# Day 29: Experimental ----
+
+  library(sf)
+  library(tidyverse)
+  library(maps)
+  
+  World <- sf::st_as_sf(map('world', plot = FALSE, fill = TRUE))
+  World_wrap <- st_wrap_dateline(World, options = c("WRAPDATELINE=YES",
+                                                    "DATELINEOFFSET=180"),
+                                 quiet = TRUE)
+  
+## Proj4js from https://spatialreference.org/ref/
+  Projections <- tribble(
+    ~Projection                       ,     ~Code    ,         ~Proj4js,
+    "WGS84"                           ,   "EPSG:4326",  "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" ,
+    "Gall-Peters Orthographic"        ,   "SR-ORG:22", "+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs",
+    "World Mercator"                  ,   "EPSG:3395",  "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+    "Sphere Miller Cylindrical"       ,  "ESRI:53003",  "+proj=mill +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +R_A +a=6371000 +b=6371000 +units=m +no_defs",
+    "World Cylindrical Equal Area"    , "SR-ORG:8287",  "+proj=cea +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs" ,
+    "NAD83"                           ,   "EPSG:4269",  "+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs",
+    "World Robinson"                  ,  "ESRI:54030",  "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+    "Mollweide on Greenwich"          ,    "SR-ORG:7",  "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs",
+    "World Sinusoidal"                ,  "ESRI:54008",  "+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+    "World Azimuthal Equidistant"     ,  "ESRI:54032",  "+proj=aeqd +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+    "South Pole Azimuthal Equidistant", "ESRI:102019",  "+proj=aeqd +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+    "North Pole Azimuthal Equidistant", "ESRI:102016",  "+proj=aeqd +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+    "Antarctic Polar Stereographic"   ,   "EPSG:3031",  "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
+    )
+  
+  Steps <- function(i) {
+    World_trans <- st_transform(World_wrap, crs = Projections$Proj4js[i])
+    p <- ggplot() +
+      geom_sf(data = World_trans, aes(fill = ID)) +
+      labs(caption = paste0("Projection: ", Projections$Projection[i])) +
+      guides(fill = FALSE) +
+      theme_minimal()
+    print(p) 
+  }
+  
+  animation::saveGIF(for(i in seq_along(Projections$Projection)) Steps(i), 
+                     interval = 1,
+                     movie.name = "Day29_World_Projections.gif")
+  
